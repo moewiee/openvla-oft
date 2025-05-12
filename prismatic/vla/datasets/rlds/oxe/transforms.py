@@ -845,6 +845,13 @@ def aloha_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
     # Don't need to do anything because dataset is already in the correct format
     return trajectory
 
+def calvin_dataset_transform(trajectory: Dict[str, Any]) -> Dict[str, Any]:
+    trajectory["action"] = trajectory["actions"]
+
+    trajectory["observation"]["state_eef"] = trajectory["observation"]["robot_obs"][:, :6]
+    trajectory["observation"]["state_gripper"] = trajectory["observation"]["robot_obs"][:, 14:15]
+
+    return trajectory
 
 # === Registry ===
 OXE_STANDARDIZATION_TRANSFORMS = {
@@ -930,4 +937,6 @@ OXE_STANDARDIZATION_TRANSFORMS = {
     "aloha1_fold_shirt_30_demos": aloha_dataset_transform,
     "aloha1_scoop_X_into_bowl_45_demos": aloha_dataset_transform,
     "aloha1_put_X_into_pot_300_demos": aloha_dataset_transform,
+    ### CALVIN datasets
+    "calvin": calvin_dataset_transform,
 }

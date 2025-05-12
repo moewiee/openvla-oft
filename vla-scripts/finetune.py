@@ -111,7 +111,7 @@ class FinetuneConfig:
                                                      #         False and merge final checkpoint offline!
 
     # Logging
-    wandb_entity: str = "your-wandb-entity"          # Name of WandB entity
+    wandb_entity: Optional[str] = None               # Name of WandB entity
     wandb_project: str = "your-wandb-project"        # Name of WandB project
     run_id_note: Optional[str] = None                # Extra note to add to end of run ID for logging
     run_id_override: Optional[str] = None            # Optional string to override the run ID with
@@ -790,7 +790,11 @@ def finetune(cfg: FinetuneConfig) -> None:
 
     # Initialize wandb logging
     if distributed_state.is_main_process:
-        wandb.init(entity=cfg.wandb_entity, project=cfg.wandb_project, name=f"ft+{run_id}")
+        # Only pass `entity` if the user has set one
+        init_kwargs = {"project": cfg.wandb_project, "name": f"ft+{run_id}"}
+        if cfg.wandb_entity:
+            init_kwargs["entity"] = cfg.wandb_entity
+        wandb.init(**init_kwargs)
 
     # Print detected constants
     print(
@@ -870,6 +874,8 @@ def finetune(cfg: FinetuneConfig) -> None:
             state_dict = load_checkpoint("vision_backbone", cfg.vla_path, cfg.resume_step)
             vla.model.vision_backbone.load_state_dict(state_dict)
         vla.model.vision_backbone = vla.model.vision_backbone.to(device_id)
+    else:
+        print("FiLM is not used.")
 
     # Wrap VLA with DDP
     vla = wrap_ddp(vla, device_id, find_unused=True)
@@ -883,6 +889,8 @@ def finetune(cfg: FinetuneConfig) -> None:
             device_id,
             {"llm_dim": vla.module.llm_dim, "proprio_dim": PROPRIO_DIM},
         )
+    else:
+        print("Proprio is not used.")
 
     # If applicable, instantiate continuous action head for L1 regression
     if cfg.use_l1_regression:
@@ -894,6 +902,8 @@ def finetune(cfg: FinetuneConfig) -> None:
             {"input_dim": vla.module.llm_dim, "hidden_dim": vla.module.llm_dim, "action_dim": ACTION_DIM},
             to_bf16=True,
         )
+    else:
+        print("L1 regression is not used.")
 
     # If applicable, instantiate diffusion action head and noisy action projector
     if cfg.use_diffusion:
@@ -913,6 +923,8 @@ def finetune(cfg: FinetuneConfig) -> None:
         noisy_action_projector = init_module(
             NoisyActionProjector, "noisy_action_projector", cfg, device_id, {"llm_dim": vla.module.llm_dim}
         )
+    else:
+        print("Diffusion is not used.")
 
     # Get number of vision patches
     NUM_PATCHES = vla.module.vision_backbone.get_num_patches() * vla.module.vision_backbone.get_num_images_in_input()

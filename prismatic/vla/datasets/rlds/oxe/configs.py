@@ -706,4 +706,20 @@ OXE_DATASET_CONFIGS = {
         "state_encoding": StateEncoding.JOINT_BIMANUAL,
         "action_encoding": ActionEncoding.JOINT_POS_BIMANUAL,
     },
+    ### Calvin datasets
+    "calvin": {
+        "image_obs_keys": {
+            "primary": "rgb_static",
+            "secondary": None,
+            "wrist": "rgb_gripper",
+        },
+        "depth_obs_keys": {
+            "primary": "depth_static",
+            "secondary": None,
+            "wrist": "depth_gripper",
+        },
+        "state_obs_keys": ["state_eef", None, "state_gripper"],
+        "state_encoding": StateEncoding.POS_EULER,
+        "action_encoding": ActionEncoding.EEF_POS,
+    }
 }
